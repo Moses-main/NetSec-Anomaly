@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+*.env
+
+# Project artifacts (confidential or large)
+models/saved_models/
+*.joblib
+*.h5
+*.ckpt
+
+# Logs and results
+logs/
+src/logs/
+*.log
+results/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test/coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Editors/IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Node/Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+build/
+
+# Vite/Cache
+.cache/
+
+# Config overrides (keep example files tracked)
+config/*.local.yaml
+config/*.secrets.yaml

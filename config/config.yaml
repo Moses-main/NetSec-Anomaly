@@ -1,0 +1,46 @@
+# =============================================================================
+# FILE: config/config.yaml
+# =============================================================================
+
+models:
+  isolation_forest:
+    contamination: 0.1
+    n_estimators: 100
+    max_samples: "auto"
+    random_state: 42
+
+  autoencoder:
+    encoding_dim: 10
+    epochs: 50
+    batch_size: 32
+    learning_rate: 0.001
+    validation_split: 0.1
+
+data:
+  sample_size: 10000
+  test_size: 0.2
+  random_state: 42
+  features:
+    - duration
+    - src_bytes
+    - dst_bytes
+    - count
+    - srv_count
+    - protocol
+    - service
+    - flag
+
+detection:
+  ensemble_method: "majority_vote" # or "intersection", "union"
+  threshold_percentile: 95
+  min_anomaly_score: 0.1
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/detector.log"
+
+api:
+  host: "0.0.0.0"
+  port: 5000
+  debug: true

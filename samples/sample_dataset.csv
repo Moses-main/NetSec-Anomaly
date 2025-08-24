@@ -1,0 +1,11 @@
+duration,src_bytes,dst_bytes,count,srv_count,protocol,service,flag
+0.10,123,45,5,10,tcp,http,SF
+0.20,300,150,8,12,udp,dns,SF
+1.50,50,400,20,25,tcp,ftp,S0
+0.05,10,5,2,3,icmp,ecr_i,REJ
+2.30,5000,1200,50,60,tcp,http,SF
+0.80,200,220,15,18,udp,ntp,SF
+3.10,8000,300,70,80,tcp,smtp,S0
+0.40,90,95,6,7,tcp,http,SF
+5.50,12000,50,100,110,tcp,ssh,S0
+0.12,60,40,3,4,udp,dns,SF
