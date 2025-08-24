@@ -4,6 +4,7 @@ Simple Flask server to expose detection results and images for the frontend,
 and handle dataset uploads to run the detection pipeline.
 """
 from flask import Flask, jsonify, send_from_directory, abort, request
+import os
 from pathlib import Path
 import json
 from werkzeug.utils import secure_filename
@@ -21,6 +22,13 @@ except Exception:  # when running as a script
         from src.main import NetworkAnomalyDetectionSystem  # type: ignore
 
 app = Flask(__name__)
+try:
+    from flask_cors import CORS  # type: ignore
+    # Allow the frontend domain in production; '*' is acceptable during initial deploys
+    CORS(app, resources={r"/api/*": {"origins": os.getenv("FRONTEND_ORIGIN", "*")}})
+except Exception:
+    # CORS not installed; continue without it
+    pass
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 RESULTS_DIR = BASE_DIR / "results"
@@ -134,11 +142,17 @@ def serve_result_file(filename: str):
 
 
 if __name__ == "__main__":
+    # Determine host/port from environment (Render and similar use $PORT)
+    HOST = os.getenv("HOST", "0.0.0.0")
+    try:
+        PORT = int(os.getenv("PORT", "5000"))
+    except ValueError:
+        PORT = 5000
+
     # Prefer a production WSGI server if available
     try:
-        from waitress import serve as _serve
-        # Run on localhost:5000 by default
-        _serve(app, host="127.0.0.1", port=5000)
+        from waitress import serve as _serve  # type: ignore
+        _serve(app, host=HOST, port=PORT)
     except Exception:
         # Fallback to Flask's built-in server
-        app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False, threaded=True)
+        app.run(host=HOST, port=PORT, debug=False, use_reloader=False, threaded=True)

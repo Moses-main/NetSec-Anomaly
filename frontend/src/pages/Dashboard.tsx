@@ -290,7 +290,9 @@ export default function Dashboard() {
         >
           <div
             className="relative w-full max-w-5xl"
-            onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent<HTMLDivElement>) =>
+              e.stopPropagation()
+            }
           >
             <button
               type="button"
@@ -305,7 +307,9 @@ export default function Dashboard() {
               alt={activeImage}
               className="max-h-[80vh] w-full rounded object-contain"
             />
-            <div className="mt-2 text-center text-sm text-slate-200">{activeImage}</div>
+            <div className="mt-2 text-center text-sm text-slate-200">
+              {activeImage}
+            </div>
           </div>
         </div>
       )}
