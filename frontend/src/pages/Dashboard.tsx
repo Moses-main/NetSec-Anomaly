@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [report, setReport] = useState<Report | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [activeImage, setActiveImage] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -64,6 +65,15 @@ export default function Dashboard() {
         if (r2.ok) setImages(await r2.json());
       } catch {}
     })();
+  }, []);
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActiveImage(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   return (
@@ -249,15 +259,21 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {images.map((img) => (
+            {images.map((img: string) => (
               <figure
                 key={img}
                 className="rounded border p-2 dark:border-slate-800"
               >
                 <img
-                  className="w-full rounded border dark:border-slate-800"
+                  className="w-full rounded border dark:border-slate-800 cursor-zoom-in"
                   src={`/results/${img}`}
                   alt={img}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveImage(img)}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLImageElement>) => {
+                    if (e.key === "Enter" || e.key === " ") setActiveImage(img);
+                  }}
                 />
                 <figcaption className="mt-2 text-center text-sm text-gray-600 dark:text-slate-400">
                   {img}
@@ -267,6 +283,32 @@ export default function Dashboard() {
           </div>
         )}
       </section>
+      {activeImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setActiveImage(null)}
+        >
+          <div
+            className="relative w-full max-w-5xl"
+            onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="Close"
+              className="absolute right-2 top-2 rounded bg-black/60 px-2 py-1 text-xl text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/60"
+              onClick={() => setActiveImage(null)}
+            >
+              ×
+            </button>
+            <img
+              src={`/results/${activeImage}`}
+              alt={activeImage}
+              className="max-h-[80vh] w-full rounded object-contain"
+            />
+            <div className="mt-2 text-center text-sm text-slate-200">{activeImage}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
