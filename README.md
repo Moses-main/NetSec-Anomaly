@@ -7,6 +7,14 @@ Identifies suspicious network traffic patterns using unsupervised learning.
 
 ---
 
+create a virtual environment and install the required packages
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
 ## Quick Start (one command)
 
 Run both backend and frontend together with the helper script:
@@ -17,6 +25,7 @@ chmod +x start.sh
 ```
 
 What it does:
+
 - Generates results if missing (runs the pipeline once)
 - Starts Flask API on http://127.0.0.1:5000
 - Installs frontend deps (first run) and starts Vite on http://127.0.0.1:5173
@@ -25,10 +34,12 @@ What it does:
 Then open the app at http://127.0.0.1:5173.
 
 ## Prerequisites
+
 - Python 3.9+
 - Node.js 18+ and npm
 
 ## 1) Backend setup
+
 Install Python dependencies (preferably in a venv):
 
 ```bash
@@ -48,6 +59,7 @@ python src/main.py --mode full --data path/to/your_data.csv
 ```
 
 This will produce:
+
 - `results/detection_report.json`
 - `results/if_scores.png`, `results/ae_errors.png`, `results/detection_comparison.png`
 
@@ -58,6 +70,7 @@ python src/server.py
 ```
 
 API endpoints:
+
 - `GET /api/health`
 - `GET /api/report`
 - `GET /api/images`
@@ -65,6 +78,7 @@ API endpoints:
 - `GET /results/<filename>`
 
 ## 2) Frontend setup (Vite + React + Tailwind)
+
 In a separate terminal:
 
 ```bash
@@ -74,11 +88,13 @@ npm run dev
 ```
 
 Visit the dashboard at:
+
 - http://127.0.0.1:5173
 
 The dev server proxies `/api/*` and `/results/*` to the Flask backend at `http://127.0.0.1:5000`.
 
 ### Upload and test via the UI
+
 - Navigate to the "Upload" page in the top navigation.
 - Choose a CSV or JSON with the expected columns (see schema below).
 - Click "Upload & Run" to process; results and charts will display and are also available on the Dashboard.
@@ -91,9 +107,11 @@ npm run build
 ```
 
 ## Expected dataset schema
+
 Supported formats: CSV (`.csv`), JSON (`.json`).
 
 Columns used (rename/map if your dataset differs):
+
 - Numeric: `duration`, `src_bytes`, `dst_bytes`, `count`, `srv_count`
 - Categorical: `protocol` (tcp/udp/icmp), `service` (http/ftp/telnet/smtp/dns), `flag` (SF/S0/REJ/RSTR)
 
@@ -132,6 +150,7 @@ curl -F "file=@samples/sample_dataset.csv" http://127.0.0.1:5000/api/upload
 ```
 
 ## Troubleshooting
+
 - Frontend blank or report missing: ensure you've run `python src/main.py --mode full` and that `src/server.py` is running.
 - Test backend:
   - `curl http://127.0.0.1:5000/api/health`
@@ -140,6 +159,7 @@ curl -F "file=@samples/sample_dataset.csv" http://127.0.0.1:5000/api/upload
 - TypeScript type errors: in `frontend/` install types with `npm i -D @types/react @types/react-dom`.
 
 ## Project structure
+
 ```
 .
 ├── src/
@@ -154,4 +174,5 @@ curl -F "file=@samples/sample_dataset.csv" http://127.0.0.1:5000/api/upload
 ```
 
 ## Security and Git hygiene
+
 Sensitive/large artifacts are ignored via `./.gitignore` (models, logs, results, env files, node_modules, etc.).
