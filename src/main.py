@@ -13,6 +13,7 @@ from pathlib import Path
 import joblib
 import json
 from datetime import datetime
+import time
 
 # Import custom modules
 from models.isolation_forest import IsolationForestDetector
@@ -53,6 +54,12 @@ class NetworkAnomalyDetectionSystem:
         # Model states
         self.models_trained = False
         self.preprocessor_fitted = False
+        self.y_train = None
+        self.y_test = None
+        self.timings = {
+            'train': {},
+            'inference': {}
+        }
         
     def _load_config(self, config_path):
         """Load configuration from YAML file"""
@@ -132,17 +139,37 @@ class NetworkAnomalyDetectionSystem:
         self.logger.info("Preprocessing network traffic data...")
         
         if fit_preprocessor:
-            X_train, X_test = self.preprocessor.fit_transform(data)
+            ret = self.preprocessor.fit_transform(data)
+            # Support both legacy and extended returns
+            if isinstance(ret, tuple) and len(ret) == 4:
+                X_train, X_test, y_train, y_test = ret
+            elif isinstance(ret, tuple) and len(ret) == 3:
+                X_train, X_test, y_train = ret
+                y_test = None
+            else:
+                X_train, X_test = ret
+                y_train = None
+                y_test = None
+            self.y_train, self.y_test = y_train, y_test
             self.preprocessor_fitted = True
         else:
             if not self.preprocessor_fitted:
                 raise ValueError("Preprocessor not fitted. Call preprocess_data with fit_preprocessor=True first.")
-            X_train, X_test = self.preprocessor.transform(data)
+            ret = self.preprocessor.transform(data)
+            if isinstance(ret, tuple) and len(ret) == 4:
+                X_train, X_test, _, y_test = ret
+            elif isinstance(ret, tuple) and len(ret) == 3:
+                X_train, X_test, _ = ret
+                y_test = None
+            else:
+                X_train, X_test = ret
+                y_test = None
+            self.y_test = y_test
         
         self.logger.info(f"Training data shape: {X_train.shape}")
         self.logger.info(f"Testing data shape: {X_test.shape}")
         
-        return X_train, X_test
+        return X_train, X_test, self.y_train, self.y_test
     
     def train_models(self, X_train):
         """
@@ -153,13 +180,17 @@ class NetworkAnomalyDetectionSystem:
         """
         self.logger.info("Training anomaly detection models...")
         
-        # Train Isolation Forest
+        # Train Isolation Forest with timing
         self.logger.info("Training Isolation Forest...")
+        t0 = time.perf_counter()
         self.if_detector.train(X_train)
+        self.timings['train']['isolation_forest_sec'] = time.perf_counter() - t0
         
-        # Train Autoencoder
+        # Train Autoencoder with timing
         self.logger.info("Training Autoencoder...")
+        t0 = time.perf_counter()
         self.ae_detector.train(X_train)
+        self.timings['train']['autoencoder_sec'] = time.perf_counter() - t0
         
         self.models_trained = True
         self.logger.info("All models trained successfully")
@@ -179,9 +210,14 @@ class NetworkAnomalyDetectionSystem:
         
         self.logger.info("Detecting anomalies...")
         
-        # Get predictions from individual models
+        # Get predictions from individual models with timing
+        t0 = time.perf_counter()
         if_results = self.if_detector.predict(X_test)
+        self.timings['inference']['isolation_forest_sec'] = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
         ae_results = self.ae_detector.predict(X_test)
+        self.timings['inference']['autoencoder_sec'] = time.perf_counter() - t0
         
         # Combine using ensemble method
         ensemble_results = self.ensemble.combine_predictions(
@@ -198,7 +234,8 @@ class NetworkAnomalyDetectionSystem:
                 'total_samples': len(X_test),
                 'if_anomalies': np.sum(if_results['predictions'] == -1),
                 'ae_anomalies': np.sum(ae_results['anomalies']),
-                'ensemble_anomalies': np.sum(ensemble_results)
+                'ensemble_anomalies': np.sum(ensemble_results),
+                'timings_sec': self.timings
             }
         }
         
@@ -363,7 +400,7 @@ class NetworkAnomalyDetectionSystem:
         data = self.load_data(data_path, generate_sample=(data_path is None))
         
         # Preprocess data
-        X_train, X_test = self.preprocess_data(data)
+        X_train, X_test, y_train, y_test = self.preprocess_data(data)
         
         # Train models
         self.train_models(X_train)
@@ -372,7 +409,7 @@ class NetworkAnomalyDetectionSystem:
         results = self.detect_anomalies(X_test)
         
         # Evaluate performance
-        metrics = self.evaluate_performance(results)
+        metrics = self.evaluate_performance(results, y_true=y_test if y_test is not None else None)
         
         # Generate visualizations
         self.generate_visualizations(results, X_test, output_dir)

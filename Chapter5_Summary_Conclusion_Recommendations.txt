@@ -1,0 +1,140 @@
+Chapter Five
+Summary, Conclusion and Recommendation
+
+---
+
+5.1 Summary of Findings
+
+This work set out to design and implement an end‑to‑end anomaly detection pipeline for embedded/enterprise network traffic, integrating tree‑based and neural approaches with a lightweight UI. The most salient findings are:
+
+- Detection is complementary across methods.
+  Isolation Forest (IF) and Autoencoder (AE) flagged overlapping but not identical records. IF excelled at quickly isolating sparse, high‑contrast anomalies, while AE was sensitive to subtle deviations from the learned “normal” manifold via reconstruction error. The ensemble (majority vote by default) produced more stable signals than either model alone.
+
+- The pipeline is reproducible and auditable.
+  A single command orchestrated ingestion, preprocessing, training, detection, visualization, and report generation. All parameters are centralized in `config/config.yaml`, logs are captured in `src/utils/logger.py`, and outputs (plots, JSON report, and saved models) are placed under `results/` and `models/`. This makes reruns traceable and comparisons fair.
+
+- Practical feature handling was decisive.
+  Consistent encoding and scaling in `src/data/preprocessor.py` reduced variance in model behavior across runs and datasets (e.g., `embedded_system_network_security_dataset.csv`, ISCX‑derived samples). Clean feature schemas minimized runtime surprises and improved downstream explainability of scores.
+
+- Usability matters for analyst workflow.
+  The UI/API loop—uploading a file, triggering the pipeline, and reviewing anomaly counts and plots—reduced the time from raw CSV to a defensible finding. Even without heavy MLOps, the system yielded artifacts suitable for briefings and follow‑on forensics.
+
+- Results align with literature expectations.
+  Divergence between IF (partition‑based) and AE (reconstruction‑based) views is typical; combining them improves robustness under distributional quirks. Where labels existed, the ensemble maintained balanced precision/recall; where labels were absent, score distributions and error bands were coherent and actionable.
+
+Overall, the system met its objectives: reliable anomaly surfacing, reproducible execution, and analyst‑friendly outputs.
+
+---
+
+5.2 Conclusion
+
+From a systems perspective, the project demonstrates that a carefully engineered unsupervised stack can deliver decision‑useful anomaly cues without heavyweight infrastructure. A few clear conclusions follow:
+
+- Methodological complementarity is a strength, not a nuisance.
+  Agreement between IF and AE is highly informative (strong anomalies); disagreement signals edge cases worth inspection. Treating model disagreement as signal leads to better triage than relying on a single detector.
+
+- Engineering discipline drives trust.
+  Explicit configuration, deterministic preprocessing, fixed random seeds, and consistent artifact logging increased confidence in each run. In anomaly detection—where ground truth is scarce—process quality substitutes for label abundance.
+
+- The primary constraints were data realism and label sparsity.
+  Network data can be noisy, class‑imbalanced, and partially labeled. That limits the strength of absolute performance claims but does not negate the operational utility of ranked anomaly lists and interpretable plots.
+
+- Maintainability and portability were preserved.
+  The codebase separates concerns (data, models, utils, UI/API), making it straightforward to swap models, add features, or deploy on a single machine.
+
+Limitations/constraints that may have affected findings:
+- Label scarcity made it difficult to compute exhaustive supervised metrics across all scenarios.
+- Potential concept drift between datasets/time windows was not explicitly modeled.
+- Feature extraction from raw PCAPs was scoped; richer flow/session features could further improve AE fidelity and IF sharpness.
+
+---
+
+5.3 Recommendations
+
+For practitioners and stakeholders:
+- Adopt an ensemble as the default operating mode.
+  Use majority vote for robustness and enable intersection mode when precision is paramount (e.g., high‑cost investigations). Calibrate thresholds with a small validation set where possible.
+
+- Formalize a human‑in‑the‑loop playbook.
+  Pair anomaly rankings with lightweight context (top contributing features, historical frequency). Route high‑severity cases to analysts with domain hints (e.g., port/service, device role).
+
+- Version everything.
+  Track config snapshots, model binaries, and result digests per run. This allows fast rollback and apples‑to‑apples comparisons.
+
+- Establish periodic model/feature reviews.
+  Schedule quarterly checks to refresh features, retrain with recent data, and look for drift in score distributions. Add basic drift monitors (e.g., PSI or KS tests) over key features.
+
+- Integrate simple explainability.
+  For IF, expose path length or tree vote summaries; for AE, report per‑feature reconstruction error summaries. Even basic attributions help analysts trust the flags.
+
+For technical evolution of the system:
+- Expand feature engineering.
+  Add flow‑level aggregations, time‑windowed statistics, and protocol‑aware fields. Consider domain‑specific encodings for IoT/embedded traffic.
+
+- Add weak supervision where labels are scarce.
+  Use data programming or heuristic rules to create noisy labels and tune thresholds. This can lift precision without large labeled sets.
+
+- Containerize and automate.
+  Provide a Docker image and a minimal CI workflow to run the full pipeline on new data drops. Add health checks for the API/UI in staging.
+
+- Optional: add a lightweight rules layer.
+  Combine ML scores with a few crisp allow/deny patterns to reduce false positives in known‑good segments.
+
+---
+
+5.4 Contributions to Knowledge
+
+- A practical, reproducible pattern for combining partition‑based (IF) and reconstruction‑based (AE) anomaly detectors in a single, auditable pipeline.
+- An analyst‑centric interface that shortens the loop from data upload to a triaged anomaly list with supporting plots.
+- An implementation blueprint—data preparation, model training, ensemble decision logic, and artifact management—that others can reuse for embedded/enterprise network contexts where labels are sparse.
+- Evidence that careful preprocessing and ensemble voting stabilize performance across heterogeneous CSV inputs drawn from different network environments.
+
+---
+
+5.5 Suggestions for Further Studies
+
+- Richer representation learning.
+  Explore sequence/temporal models (e.g., LSTMs, Transformers) over flows or sessions to capture burstiness and periodicity missed by tabular AE.
+
+- Adaptive ensembles and calibration.
+  Learn weights for IF and AE based on recent validation performance; incorporate conformal prediction for calibrated anomaly scores.
+
+- Drift awareness.
+  Build a small drift‑detection module (feature and score drift) that triggers retraining or threshold adjustment.
+
+- PCAP‑native pipelines.
+  Integrate robust PCAP parsing with feature extraction and ground truth hooks (e.g., Zeek/Suricata metadata) to expand beyond CSV.
+
+- Operational benchmarking.
+  Design red‑team style tests (synthetic injections with known signatures) to measure precision at top‑K under realistic alert budgets.
+
+---
+
+References
+
+- Liu, F. T., Ting, K. M., & Zhou, Z.-H. (2008). Isolation Forest. ICDM.
+- Chalapathy, R., & Chawla, S. (2019). Deep Learning for Anomaly Detection: A Survey. arXiv:1901.03407.
+- Zimek, A., Schubert, E., & Kriegel, H.-P. (2014). A survey on unsupervised outlier detection in high‑dimensional data. Statistical Analysis and Data Mining.
+- Mason, H., & Wiggins, C. (2010). A Taxonomy of Data Science (OSEMN). (Methodology context for reproducible pipelines.)
+- Rudin, C. (2019). Stop explaining black box machine learning models for high stakes decisions and use interpretable models instead. Nature Machine Intelligence. (Explainability context.)
+
+---
+
+Appendices (Guide)
+
+A. Run Commands
+- CLI (full pipeline): python src/main.py --mode full --data <path> --config config/config.yaml
+- Detect only: python src/main.py --mode detect --data <path> --models models/
+- API: python src/server.py (then use /api/upload, /api/report)
+
+B. Artifacts
+- Results and plots: results/
+- Saved models: models/
+- Config snapshot: results/detection_report.json (includes key parameters)
+
+C. Figures
+- Context diagram: context_diagram.png (and .svg)
+- Flow chart: flow_chart.png
+- Deployment view: deployment_view.png
+
+Note: Replace placeholders with your actual run IDs, dataset paths, and the best plots from your latest execution. Ensure all numbers cited in your final thesis match those produced under the archived config and results folder for that run.

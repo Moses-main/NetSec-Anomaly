@@ -25,7 +25,9 @@ class NetworkDataLoader:
             'srv_count': np.random.poisson(5, n_samples),
             'protocol': np.random.choice(['tcp', 'udp', 'icmp'], n_samples, p=[0.7, 0.2, 0.1]),
             'service': np.random.choice(['http', 'ftp', 'telnet', 'smtp', 'dns'], n_samples),
-            'flag': np.random.choice(['SF', 'S0', 'REJ', 'RSTR'], n_samples, p=[0.6, 0.2, 0.1, 0.1])
+            'flag': np.random.choice(['SF', 'S0', 'REJ', 'RSTR'], n_samples, p=[0.6, 0.2, 0.1, 0.1]),
+            # Ground-truth label: 0 = normal, 1 = anomaly
+            'label': np.zeros(n_samples, dtype=int)
         }
         
         # Add anomalies (10% of data)
@@ -37,6 +39,7 @@ class NetworkDataLoader:
                 data['src_bytes'][idx] *= 100  # Large data transfer
             else:
                 data['count'][idx] *= 50  # High connection count
+            data['label'][idx] = 1
         
         return pd.DataFrame(data)
     
